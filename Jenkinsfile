@@ -20,7 +20,7 @@ pipeline {
       }
       post {
         success {
-          junit 'backend/target/surefire-reports/**/*.xml'
+          junit 'backend/target/1surefire-reports/**/*.xml'
         }
         failure {
           withCredentials([string(credentialsId: 'telegram-bot-token', variable: 'TELEGRAM_TOKEN')]) {
