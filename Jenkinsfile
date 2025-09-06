@@ -15,7 +15,15 @@ pipeline {
         stage('Build & Test backend') {
             steps {
                 dir("backend") {
-                    sh 'mvn -B clean package'
+                    sh 'amvn -B clean package'
+            post {
+                failure {
+                    withCredentials([string(credentialsId: 'telegram-bot-token', variable: 'TELEGRAM_TOKEN')]) {
+                        sh '''
+                            curl -s -X POST -H 'Content-Type: application/json' \
+                            --data "{\\"chat_id\\": \\"180424264\\", \\"text\\": \\"Завалился шаг сборки Бэкенд\\"}" \
+                            https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage
+                        '''
                 }
             }
             post {
