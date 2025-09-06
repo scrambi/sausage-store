@@ -4,13 +4,10 @@ pipeline {
   tools {
     jdk    'jdk16'
     maven  'maven-3.9.11'
-    nodejs 'node16'
+    nodejs 'node16'   // оставляем 16; при желании можно вернуть node14
   }
 
-  options {
-    timestamps()
-    ansiColor('xterm')
-  }
+  options { timestamps() /* ansiColor('xterm') — включай, если стоит AnsiColor */ }
 
   stages {
     stage('Build & Test backend') {
@@ -29,7 +26,6 @@ pipeline {
     stage('Build frontend') {
       steps {
         dir('frontend') {
-          // фронт у нас старенький → на Node16 иногда нужен npm поновее
           sh '''
             set -e
             node -v
@@ -45,13 +41,14 @@ pipeline {
 
     stage('Save artifacts') {
       steps {
-        // jar может называться по-разному, берём маской
+        // jar может менять имя — берём маской
         archiveArtifacts artifacts: 'backend/target/*.jar', fingerprint: true
-        // у тебя dist лежит прямо в frontend/dist
-        archiveArtifacts artifacts: 'frontend/dist/**', fingerprint: true
+        // тут лежит сборка Angular — без лишней вложенной папки
+        archiveArtifacts artifacts: 'frontend/dist/**',      fingerprint: true
       }
       post {
         success {
+          // Telegram
           withCredentials([
             string(credentialsId: 'telegram-bot-token', variable: 'BOT_TOKEN'),
             string(credentialsId: 'telegram-chat-id',  variable: 'CHAT_ID')
@@ -61,8 +58,13 @@ pipeline {
               MSG="✅ Сборка успешна: $JOB_NAME #$BUILD_NUMBER (commit ${SHORT_SHA})"
               curl -sS -X POST -H "Content-Type: application/json" \
                    --data "{\"chat_id\":\"$CHAT_ID\",\"text\":\"$MSG\"}" \
-                   https://api.telegram.org/bot$BOT_TOKEN/sendMessage
+                   https://api.telegram.org/bot$BOT_TOKEN/sendMessage || true
             '''
+          }
+
+          // Chuck Norris (не валим билд, если плагин не установлен)
+          script {
+            try { chuckNorris() } catch (ignored) { echo 'Chuck Norris plugin not available' }
           }
         }
       }
