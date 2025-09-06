@@ -15,7 +15,7 @@ pipeline {
     stage('Build & Test backend') {
       steps {
         dir('backend') {
-          sh 'amvn -B clean package'
+          sh 'mvn -B clean package'
         }
       }
       post {
